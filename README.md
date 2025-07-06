@@ -540,6 +540,6 @@ npm run clean
 
 ---
 
-**Built with ❤️ and ☕ by the chinmaydonarkar@gmail.com**
+**Built by chinmaydonarkar@gmail.com**
 
 *Ready to revolutionize car rental experiences! 🚗✨* 
