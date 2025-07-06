@@ -1,0 +1,19 @@
+{
+  "name": "carental-services",
+  "version": "1.0.0",
+  "description": "Car Rental Services - Microservices Architecture",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:gateway\" \"npm run dev:car\" \"npm run dev:booking\" \"npm run dev:frontend\"",
+    "dev:gateway": "cd api-gateway && npm run dev",
+    "dev:car": "cd car-service && npm run dev",
+    "dev:booking": "cd booking-service && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd api-gateway && npm install && cd ../car-service && npm install && cd ../booking-service && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "ts-jest": "^29.4.0",
+    "concurrently": "^8.2.2"
+  }
+}
