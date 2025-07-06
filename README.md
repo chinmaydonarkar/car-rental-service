@@ -438,26 +438,6 @@ JWT_SECRET=your-production-jwt-secret-key
 PORT=3000
 ```
 
-### Docker Deployment
-```bash
-# Build all services
-docker build -t carrental-frontend ./frontend
-docker build -t carrental-api-gateway ./api-gateway
-docker build -t carrental-car-service ./car-service
-docker build -t carrental-booking-service ./booking-service
-
-# Run with docker-compose
-docker-compose up -d
-```
-
-### Production Checklist
-- [ ] Set production MongoDB connection
-- [ ] Configure JWT secrets
-- [ ] Set up SSL certificates
-- [ ] Configure CORS for production domains
-- [ ] Set up monitoring and logging
-- [ ] Configure backup strategies
-- [ ] Set up CI/CD pipeline
 
 ## 📈 Performance & Scalability
 
@@ -504,7 +484,6 @@ docker-compose up -d
 - ✨ **Complete React frontend** with modern UI
 - 🔐 **JWT authentication** system
 - 🚗 **Real-time car availability** calculation
-- 📱 **Responsive design** for all devices
 - 🛡️ **Enhanced security** and validation
 - 🧪 **Comprehensive test suite**
 
@@ -559,20 +538,8 @@ npm run clean
    - Environment details
    - Expected vs actual behavior
 
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **React Team** for the amazing frontend framework
-- **Node.js Community** for the robust runtime
-- **MongoDB Team** for the flexible database
-- **Express.js** for the web framework
-- **TypeScript** for type safety
-
 ---
 
-**Built with ❤️ and ☕ by the CarRental Team**
+**Built with ❤️ and ☕ by the chinmaydonarkar@gmail.com**
 
 *Ready to revolutionize car rental experiences! 🚗✨* 
