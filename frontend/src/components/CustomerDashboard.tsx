@@ -130,8 +130,8 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
     const endDate = new Date(end);
     const diffTime = endDate.getTime() - startDate.getTime();
     const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    // If same day booking, return 1 day minimum
-    return days === 0 ? 1 : days;
+    // Add 1 to include both start and end dates
+    return days + 1;
   };
 
   return (
