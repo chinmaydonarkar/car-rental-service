@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { CarServiceClient } from '../services/carService';
 
 const router = Router();
 const carService = new CarServiceClient();
 
 // Get car availability
-router.get('/availability', async (req: any, res: any) => {
+router.get('/availability', async (req: Request, res: Response) => {
   try {
     const { start, end } = req.query;
     

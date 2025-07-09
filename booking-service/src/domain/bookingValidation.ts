@@ -18,9 +18,6 @@ export function validateDateRange(startDate: Date, endDate: Date): void {
     throw new BookingValidationError('Start date must be before end date');
   }
   
-  // if (startDate <= new Date()) {
-  //   throw new BookingValidationError('Cannot book for past dates');
-  // }
 }
 
 export function hasDateOverlap(
@@ -34,4 +31,25 @@ export function hasDateOverlap(
       booking.status === 'confirmed'
     );
   });
+} 
+
+export function validateBookingInput(bookingData: any, totalPrice: any): void {
+  if (!bookingData.carId || typeof bookingData.carId !== 'string') {
+    throw new BookingValidationError('carId is required and must be a string');
+  }
+  if (!bookingData.startDate || isNaN(Date.parse(bookingData.startDate))) {
+    throw new BookingValidationError('startDate is required and must be a valid date string');
+  }
+  if (!bookingData.endDate || isNaN(Date.parse(bookingData.endDate))) {
+    throw new BookingValidationError('endDate is required and must be a valid date string');
+  }
+  if (!bookingData.licenseNumber || typeof bookingData.licenseNumber !== 'string') {
+    throw new BookingValidationError('licenseNumber is required and must be a string');
+  }
+  if (!bookingData.licenseValidUntil || isNaN(Date.parse(bookingData.licenseValidUntil))) {
+    throw new BookingValidationError('licenseValidUntil is required and must be a valid date string');
+  }
+  if (typeof totalPrice !== 'number' || isNaN(totalPrice)) {
+    throw new BookingValidationError('totalPrice is required and must be a number');
+  }
 } 

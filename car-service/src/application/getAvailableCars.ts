@@ -1,5 +1,5 @@
 import { CarModel } from '../infrastructure/CarModel';
-import { getSeasonsInRange } from '../domain/seasonUtils';
+import { getSeasonsInRange, getSeason } from '../domain/seasonUtils';
 import axios from 'axios';
 
 interface BookingData {
@@ -10,6 +10,9 @@ interface BookingData {
 }
 
 export async function getAvailableCars(startDate: Date, endDate: Date) {
+  if (startDate > endDate) {
+    throw new Error('Invalid date range: startDate must be before or equal to endDate');
+  }
   const cars = await CarModel.find();
   const seasons = getSeasonsInRange(startDate, endDate);
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -34,7 +37,7 @@ export async function getAvailableCars(startDate: Date, endDate: Date) {
     let dayCounts: Record<string, number> = { peak: 0, mid: 0, off: 0 };
     let current = new Date(startDate);
     while (current <= endDate) {
-      const season = getSeasonsInRange(current, current)[0];
+      const season = getSeason(current);
       total += car.prices[season];
       dayCounts[season]++;
       current.setDate(current.getDate() + 1);

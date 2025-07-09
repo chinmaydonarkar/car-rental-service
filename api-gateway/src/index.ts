@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import carRoutes from './routes/cars';
 import bookingRoutes from './routes/bookings';
@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // Health check endpoint
-app.get('/health', (req: any, res: any) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'OK', message: 'API Gateway is running' });
 });
 
@@ -24,13 +24,13 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
 
 // Error handling middleware
-app.use((error: any, req: any, res: any, next: any) => {
+app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
   console.error('API Gateway error:', error);
   res.status(500).json({ error: 'Internal server error' });
 });
 
 // 404 handler
-app.use('*', (req: any, res: any) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 

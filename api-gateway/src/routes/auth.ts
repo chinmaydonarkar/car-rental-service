@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { BookingServiceClient } from '../services/bookingService';
 
 const router = Router();
 const bookingService = new BookingServiceClient();
 
 // Register new user
-router.post('/register', async (req: any, res: any) => {
+router.post('/register', async (req: Request, res: Response) => {
   try {
     const user = await bookingService.register(req.body);
     res.status(201).json(user);
@@ -16,7 +16,7 @@ router.post('/register', async (req: any, res: any) => {
 });
 
 // Login user
-router.post('/login', async (req: any, res: any) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const result = await bookingService.login(req.body);
     res.json(result);
@@ -26,19 +26,25 @@ router.post('/login', async (req: any, res: any) => {
   }
 });
 
-// Get current user (requires token)
-router.get('/me', async (req: any, res: any) => {
+// Get current user info
+router.get('/me', async (req: Request, res: Response) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'Authorization header missing' });
+    }
+    const token = authHeader.split(' ')[1];
     if (!token) {
       return res.status(401).json({ error: 'Access token required' });
     }
-    
     const user = await bookingService.getCurrentUser(token);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
     res.json(user);
   } catch (error: any) {
-    console.error('Get user error:', error);
-    res.status(401).json({ error: error.message });
+    console.error('Get current user error:', error);
+    res.status(500).json({ error: error.message || 'Failed to get user' });
   }
 });
 

@@ -5,11 +5,15 @@ import {
   validateLicenseValidity, 
   validateDateRange, 
   hasDateOverlap,
-  BookingValidationError 
+  BookingValidationError,
+  validateBookingInput // <-- import the new function
 } from '../domain/bookingValidation';
 
 export class BookingService {
   async createBooking(bookingData: CreateBookingRequest, totalPrice: number): Promise<Booking> {
+    // Use shared input validation
+    validateBookingInput(bookingData, totalPrice);
+
     const startDate = new Date(bookingData.startDate);
     const endDate = new Date(bookingData.endDate);
     const licenseValidUntil = new Date(bookingData.licenseValidUntil);

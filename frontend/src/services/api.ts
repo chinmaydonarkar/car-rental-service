@@ -44,6 +44,20 @@ class ApiService {
     return headers;
   }
 
+  // DRY: Helper for response parsing and error throwing
+  private async parseResponse<T>(response: Response, defaultErrorMsg: string): Promise<T> {
+    let data: any = null;
+    try {
+      data = await response.json();
+    } catch {
+      // ignore if no body
+    }
+    if (!response.ok) {
+      throw new Error((data && data.error) || defaultErrorMsg);
+    }
+    return data;
+  }
+
   // Authentication methods
   async register(userData: CreateUserRequest): Promise<AuthUser> {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -51,13 +65,7 @@ class ApiService {
       headers: this.getHeaders(),
       body: JSON.stringify(userData),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
-    }
-
-    return response.json();
+    return this.parseResponse<AuthUser>(response, 'Registration failed');
   }
 
   async login(loginData: LoginRequest): Promise<LoginResponse> {
@@ -66,13 +74,7 @@ class ApiService {
       headers: this.getHeaders(),
       body: JSON.stringify(loginData),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Login failed');
-    }
-
-    const result = await response.json();
+    const result = await this.parseResponse<LoginResponse>(response, 'Login failed');
     this.setToken(result.token);
     return result;
   }
@@ -81,13 +83,7 @@ class ApiService {
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: this.getHeaders(),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get user');
-    }
-
-    return response.json();
+    return this.parseResponse<AuthUser>(response, 'Failed to get user');
   }
 
   logout() {
@@ -96,19 +92,13 @@ class ApiService {
 
   // Car availability
   async getCarAvailability(startDate: string, endDate: string): Promise<CarAvailability[]> {
-    let response = await fetch(
+    const response = await fetch(
       `${API_BASE_URL}/cars/availability?start=${startDate}&end=${endDate}`,
       {
         headers: this.getHeaders(),
       }
     );
-     
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to fetch car availability');
-    }
-
-    return response.json();
+    return this.parseResponse<CarAvailability[]>(response, 'Failed to fetch car availability');
   }
 
   // Customer booking methods
@@ -118,35 +108,23 @@ class ApiService {
       headers: this.getHeaders(),
       body: JSON.stringify(bookingData),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMessage = errorData.error || 'Failed to create booking';
-      
-      // Provide more specific error messages
-      if (errorMessage.includes('already have a confirmed booking')) {
+    const data = await this.parseResponse<any>(response, 'Failed to create booking');
+    // Provide more specific error messages
+    if (data.error && typeof data.error === 'string') {
+      if (data.error.includes('already have a confirmed booking')) {
         throw new Error('You already have a confirmed booking for these dates. Please cancel your existing booking first.');
-      } else if (errorMessage.includes('already have a booking on these dates')) {
+      } else if (data.error.includes('already have a booking on these dates')) {
         throw new Error('You already have a booking on these dates. You cannot have multiple bookings for the same time period.');
-      } else {
-        throw new Error(errorMessage);
       }
     }
-
-    return response.json();
+    return data;
   }
 
   async getMyBookings(): Promise<Booking[]> {
     const response = await fetch(`${API_BASE_URL}/bookings/my-bookings`, {
       headers: this.getHeaders(),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to fetch bookings');
-    }
-
-    return response.json();
+    return this.parseResponse<Booking[]>(response, 'Failed to fetch bookings');
   }
 
   async cancelMyBooking(bookingId: string): Promise<Booking> {
@@ -154,13 +132,7 @@ class ApiService {
       method: 'PATCH',
       headers: this.getHeaders(),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to cancel booking');
-    }
-
-    return response.json();
+    return this.parseResponse<Booking>(response, 'Failed to cancel booking');
   }
 
   // Admin methods (for admin panel)
@@ -170,39 +142,21 @@ class ApiService {
       headers: this.getHeaders(),
       body: JSON.stringify(userData),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create user');
-    }
-
-    return response.json();
+    return this.parseResponse<User>(response, 'Failed to create user');
   }
 
   async getUsers(): Promise<User[]> {
     const response = await fetch(`${API_BASE_URL}/users`, {
       headers: this.getHeaders(),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to fetch users');
-    }
-
-    return response.json();
+    return this.parseResponse<User[]>(response, 'Failed to fetch users');
   }
 
   async getUserBookings(userId: string): Promise<Booking[]> {
     const response = await fetch(`${API_BASE_URL}/bookings/user/${userId}`, {
       headers: this.getHeaders(),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to fetch user bookings');
-    }
-
-    return response.json();
+    return this.parseResponse<Booking[]>(response, 'Failed to fetch user bookings');
   }
 
   async cancelBooking(bookingId: string, userId: string): Promise<Booking> {
@@ -211,13 +165,7 @@ class ApiService {
       headers: this.getHeaders(),
       body: JSON.stringify({ userId }),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to cancel booking');
-    }
-
-    return response.json();
+    return this.parseResponse<Booking>(response, 'Failed to cancel booking');
   }
 }
 
