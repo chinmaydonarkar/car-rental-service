@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { loginSchema } from '../utils/validations';
+import type { LoginFormData } from '../utils/validations';
 import { apiService } from '../services/api';
+import FormField from './common/FormField';
 import './Auth.css';
 
 interface LoginProps {
@@ -8,34 +11,43 @@ interface LoginProps {
 }
 
 export default function Login({ onLogin, onSwitchToRegister }: LoginProps) {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+  const {
+    formData,
+    errors,
+    loading,
+    updateField,
+    validateField,
+    handleSubmit,
+    getFieldError,
+    clearErrors
+  } = useFormValidation<LoginFormData>({
+    schema: loginSchema,
+    initialData: {
+      email: '',
+      password: ''
+    },
+    onSubmit: async (data) => {
+      try {
+        await apiService.login(data);
+        onLogin();
+      } catch (error) {
+        // Error will be handled by the validation hook
+        throw error;
+      }
+    }
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    updateField(name as keyof LoginFormData, value);
+    clearErrors();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      await apiService.login(formData);
-      onLogin();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+  const handleBlur = (fieldName: keyof LoginFormData) => {
+    validateField(fieldName);
   };
+
+  const formError = getFieldError('form');
 
   return (
     <div className="auth-container">
@@ -46,33 +58,33 @@ export default function Login({ onLogin, onSwitchToRegister }: LoginProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {error && <div className="error-message">{error}</div>}
+          {formError && <div className="error-message">{formError}</div>}
           
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="Enter your email"
-            />
-          </div>
+          <FormField
+            label="Email Address"
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            onBlur={() => handleBlur('email')}
+            placeholder="Enter your email"
+            required
+            error={getFieldError('email')}
+          />
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Enter your password"
-            />
-          </div>
+          <FormField
+            label="Password"
+            id="password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            onBlur={() => handleBlur('password')}
+            placeholder="Enter your password"
+            required
+            error={getFieldError('password')}
+          />
 
           <button 
             type="submit" 

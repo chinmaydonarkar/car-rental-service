@@ -64,3 +64,108 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Global form field error styling */
+.field-error {
+  color: #f8fafc;
+  font-size: 0.875rem;
+  margin-top: 5px;
+  font-weight: 500;
+  background: rgba(239, 68, 68, 0.15);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+}
+
+.form-input.error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Ensure consistent form layout */
+.form-group {
+  margin-bottom: 20px;
+  min-height: 90px; /* Reserve space for error messages */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.form-group .input-container {
+  flex-shrink: 0;
+  height: 48px; /* Fixed height for input fields */
+  display: flex;
+  align-items: center;
+}
+
+.form-group .field-error-container {
+  min-height: 30px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.form-group .field-error {
+  margin-top: 8px;
+  flex-shrink: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  line-height: 1.4;
+}
+
+/* Ensure form rows maintain alignment */
+.form-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start; /* Align to top of form groups */
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* Align buttons with input fields */
+.form-row button {
+  align-self: flex-start;
+  margin-top: 32px; /* Push button down to align with input fields (label height + some spacing) */
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: inherit;
+}
+
+.form-input {
+  width: 100%;
+  height: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  font-size: 1rem;
+  backdrop-filter: blur(10px);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}

@@ -101,11 +101,14 @@
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
   margin-bottom: 1.5rem;
+  align-items: flex-start; /* Keep original for grid layout */
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  min-height: 90px; /* Ensure consistent height */
+  justify-content: flex-start;
 }
 
 .form-group label {
@@ -117,6 +120,8 @@
 
 .form-group input,
 .form-group select {
+  width: 100%;
+  height: 100%;
   padding: 0.75rem 1rem;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
@@ -124,6 +129,39 @@
   transition: all 0.3s ease;
   background: white;
   color: #2d3748;
+  box-sizing: border-box;
+}
+
+/* Ensure consistent input field heights */
+.form-group .input-container {
+  flex-shrink: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.form-group .field-error-container {
+  min-height: 30px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.form-group .field-error {
+  margin-top: 8px;
+  flex-shrink: 0;
+  color: #f8fafc;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  backdrop-filter: blur(10px);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
 }
 
 .form-group input:focus,
@@ -163,13 +201,16 @@
 
 /* Error Message */
 .error {
-  background: linear-gradient(135deg, #fed7d7, #feb2b2);
-  color: #c53030;
-  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f8fafc;
+  padding: 12px 16px;
   border-radius: 10px;
-  margin-bottom: 1rem;
-  border-left: 4px solid #e53e3e;
-  font-weight: 600;
+  margin-bottom: 15px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  backdrop-filter: blur(10px);
+  font-weight: 500;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 /* Bookings List */

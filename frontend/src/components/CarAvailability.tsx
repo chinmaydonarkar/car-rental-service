@@ -1,71 +1,95 @@
 import { useState } from 'react';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { carSearchSchema } from '../utils/validations';
+import type { CarSearchData } from '../utils/validations';
 import type { CarAvailability } from '../types';
 import { apiService } from '../services/api';
+import FormField from './common/FormField';
 import './CarAvailability.css';
 
 function CarAvailabilityComponent() {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [cars, setCars] = useState<CarAvailability[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSearch = async () => {
-    if (!startDate || !endDate) {
-      setError('Please select both start and end dates');
-      return;
+  const {
+    formData: searchData,
+    errors: searchErrors,
+    loading: searchLoading,
+    updateField: updateSearchField,
+    validateField: validateSearchField,
+    handleSubmit: handleSearchSubmit,
+    getFieldError: getSearchFieldError,
+    clearErrors: clearSearchErrors
+  } = useFormValidation<CarSearchData>({
+    schema: carSearchSchema,
+    initialData: {
+      startDate: '',
+      endDate: ''
+    },
+    onSubmit: async (data) => {
+      setError('');
+      try {
+        let carData = await apiService.getCarAvailability(data.startDate, data.endDate);
+        setCars(carData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch car availability');
+      }
     }
+  });
 
-    setLoading(true);
-    setError('');
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    updateSearchField(name as keyof CarSearchData, value);
+    clearSearchErrors();
+  };
 
-    try {
-      let carData = await apiService.getCarAvailability(startDate, endDate);
-      setCars(carData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch car availability');
-    } finally {
-      setLoading(false);
-    }
+  const handleSearchBlur = (fieldName: keyof CarSearchData) => {
+    validateSearchField(fieldName);
   };
 
   return (
     <div className="car-availability">
       <h2>🚗 Check Car Availability</h2>
       
-      <div className="search-form">
-        <div className="form-group">
-          <label htmlFor="startDate">Start Date:</label>
-          <input
-            type="date"
-            id="startDate"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-          />
-        </div>
+      <form onSubmit={handleSearchSubmit} className="search-form">
+        {getSearchFieldError('form') && <div className="error-message">⚠️ {getSearchFieldError('form')}</div>}
         
-        <div className="form-group">
-          <label htmlFor="endDate">End Date:</label>
-          <input
-            type="date"
-            id="endDate"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            min={startDate || new Date().toISOString().split('T')[0]}
-          />
-        </div>
+        <FormField
+          label="Start Date"
+          id="startDate"
+          name="startDate"
+          type="date"
+          value={searchData.startDate}
+          onChange={handleSearchChange}
+          onBlur={() => handleSearchBlur('startDate')}
+          required
+          min={new Date().toISOString().split('T')[0]}
+          error={getSearchFieldError('startDate')}
+        />
+        
+        <FormField
+          label="End Date"
+          id="endDate"
+          name="endDate"
+          type="date"
+          value={searchData.endDate}
+          onChange={handleSearchChange}
+          onBlur={() => handleSearchBlur('endDate')}
+          required
+          min={searchData.startDate || new Date().toISOString().split('T')[0]}
+          error={getSearchFieldError('endDate')}
+        />
         
         <button 
           className="search-button" 
-          onClick={handleSearch}
-          disabled={loading}
+          type="submit"
+          disabled={searchLoading}
         >
-          {loading ? '🔍 Searching...' : '🚀 Search Available Cars'}
+          {searchLoading ? '🔍 Searching...' : '🚀 Search Available Cars'}
         </button>
-      </div>
+      </form>
 
-      {error && <div className="error">⚠️ {error}</div>}
+      {error && <div className="error-message">⚠️ {error}</div>}
 
       {cars.length > 0 && (
         <div className="results">

@@ -50,7 +50,7 @@ function MyBookings({ user }: MyBookingsProps) {
       {loading ? (
         <p>🔄 Loading bookings...</p>
       ) : error ? (
-        <div className="error">⚠️ {error}</div>
+        <div className="error-message">⚠️ {error}</div>
       ) : (
         <>
           {success && <div className="success">✅ {success}</div>}

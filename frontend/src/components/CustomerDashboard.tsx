@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { carSearchSchema } from '../utils/validations';
+import type { CarSearchData } from '../utils/validations';
 import { apiService } from '../services/api';
 import type { CarAvailability, Booking, AuthUser } from '../types';
+import FormField from './common/FormField';
 import './CustomerDashboard.css';
 
 interface CustomerDashboardProps {
@@ -17,11 +21,40 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
   
   // Booking form state
   const [selectedCar, setSelectedCar] = useState<CarAvailability | null>(null);
-  const [bookingForm, setBookingForm] = useState({
-    startDate: '',
-    endDate: '',
-    licenseNumber: user.licenseNumber,
-    licenseValidUntil: user.licenseValidUntil
+  
+  // Form validation for car search
+  const {
+    formData: searchData,
+    errors: searchErrors,
+    loading: searchLoading,
+    updateField: updateSearchField,
+    validateField: validateSearchField,
+    handleSubmit: handleSearchSubmit,
+    getFieldError: getSearchFieldError,
+    clearErrors: clearSearchErrors
+  } = useFormValidation<CarSearchData>({
+    schema: carSearchSchema,
+    initialData: {
+      startDate: '',
+      endDate: ''
+    },
+    onSubmit: async (data) => {
+      setLoading(true);
+      setError('');
+      
+      try {
+        const availableCars = await apiService.getCarAvailability(
+          data.startDate,
+          data.endDate
+        );
+        setCars(availableCars);
+        setActiveTab('browse');
+      } catch (err) {
+        setError('Failed to fetch available cars');
+      } finally {
+        setLoading(false);
+      }
+    }
   });
 
   useEffect(() => {
@@ -39,27 +72,14 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
     }
   };
 
-  const handleSearchCars = async () => {
-    if (!bookingForm.startDate || !bookingForm.endDate) {
-      setError('Please select start and end dates');
-      return;
-    }
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    updateSearchField(name as keyof CarSearchData, value);
+    clearSearchErrors();
+  };
 
-    setLoading(true);
-    setError('');
-
-    try {
-      const availableCars = await apiService.getCarAvailability(
-        bookingForm.startDate,
-        bookingForm.endDate
-      );
-      setCars(availableCars);
-      setActiveTab('browse');
-    } catch (err) {
-      setError('Failed to fetch available cars');
-    } finally {
-      setLoading(false);
-    }
+  const handleSearchBlur = (fieldName: keyof CarSearchData) => {
+    validateSearchField(fieldName);
   };
 
   const handleBookCar = async (car: CarAvailability) => {
@@ -75,22 +95,19 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
     try {
       const bookingData = {
         carId: selectedCar._id || '',
-        startDate: bookingForm.startDate,
-        endDate: bookingForm.endDate,
-        licenseNumber: bookingForm.licenseNumber,
-        licenseValidUntil: bookingForm.licenseValidUntil,
+        startDate: searchData.startDate,
+        endDate: searchData.endDate,
+        licenseNumber: user.licenseNumber,
+        licenseValidUntil: user.licenseValidUntil,
         totalPrice: selectedCar.totalPrice
       };
 
       await apiService.createBooking(bookingData);
       setSelectedCar(null);
       setCars([]);
-      setBookingForm({
-        startDate: '',
-        endDate: '',
-        licenseNumber: user.licenseNumber,
-        licenseValidUntil: user.licenseValidUntil
-      });
+      // Reset search form
+      updateSearchField('startDate', '');
+      updateSearchField('endDate', '');
       alert('Booking confirmed successfully! 🎉');
       loadMyBookings();
     } catch (err: any) {
@@ -168,39 +185,44 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
           <div className="browse-section">
             <div className="search-form">
               <h2>🔍 Find Available Cars</h2>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Start Date</label>
-                  <input
-                    type="date"
-                    value={bookingForm.startDate}
-                    onChange={(e) => setBookingForm({
-                      ...bookingForm,
-                      startDate: e.target.value
-                    })}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>End Date</label>
-                  <input
-                    type="date"
-                    value={bookingForm.endDate}
-                    onChange={(e) => setBookingForm({
-                      ...bookingForm,
-                      endDate: e.target.value
-                    })}
-                    min={bookingForm.startDate || new Date().toISOString().split('T')[0]}
-                  />
-                </div>
+              <form onSubmit={handleSearchSubmit} className="form-row">
+                {getSearchFieldError('form') && (
+                  <div className="error-message">⚠️ {getSearchFieldError('form')}</div>
+                )}
+                <FormField
+                  label="Start Date"
+                  id="startDate"
+                  name="startDate"
+                  type="date"
+                  value={searchData.startDate}
+                  onChange={handleSearchChange}
+                  onBlur={() => handleSearchBlur('startDate')}
+                  required
+                  min={new Date().toISOString().split('T')[0]}
+                  error={getSearchFieldError('startDate')}
+                />
+
+                <FormField
+                  label="End Date"
+                  id="endDate"
+                  name="endDate"
+                  type="date"
+                  value={searchData.endDate}
+                  onChange={handleSearchChange}
+                  onBlur={() => handleSearchBlur('endDate')}
+                  required
+                  min={searchData.startDate || new Date().toISOString().split('T')[0]}
+                  error={getSearchFieldError('endDate')}
+                />
+
                 <button 
-                  onClick={handleSearchCars}
-                  disabled={loading}
+                  type="submit"
+                  disabled={searchLoading}
                   className="search-button"
                 >
-                  {loading ? 'Searching...' : 'Search Cars'}
+                  {searchLoading ? 'Searching...' : 'Search Cars'}
                 </button>
-              </div>
+              </form>
             </div>
 
             {cars.length > 0 && (
@@ -212,8 +234,8 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
                       <div className="car-info">
                         <h4>{car.brand} {car.carModel}</h4>
                         <p>Available: {car.available} cars</p>
-                        <p>Price per day: ${car.avgDayPrice}</p>
-                        <p className="total-price">Total: ${car.totalPrice}</p>
+                        <p>Price per day: ${car.avgDayPrice.toFixed(2)}</p>
+                        <p className="total-price">Total: ${car.totalPrice.toFixed(2)}</p>
                       </div>
                       <button 
                         onClick={() => handleBookCar(car)}
@@ -242,7 +264,7 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
                       <h4>Booking #{booking._id.slice(-6)}</h4>
                       <p>Dates: {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}</p>
                       <p>Duration: {calculateDays(booking.startDate, booking.endDate)} days</p>
-                      <p>Total Price: ${booking.totalPrice}</p>
+                      <p>Total Price: ${booking.totalPrice.toFixed(2)}</p>
                       <p className={`status ${booking.status}`}>
                         Status: {booking.status}
                       </p>
@@ -270,15 +292,15 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
             <h3>Confirm Booking</h3>
             <div className="booking-details">
               <p><strong>Car:</strong> {selectedCar.brand} {selectedCar.carModel}</p>
-              <p><strong>Dates:</strong> {bookingForm.startDate} to {bookingForm.endDate}</p>
-              <p><strong>Duration:</strong> {calculateDays(bookingForm.startDate, bookingForm.endDate)} days</p>
-              <p><strong>Total Price:</strong> ${selectedCar.totalPrice}</p>
+              <p><strong>Dates:</strong> {searchData.startDate} to {searchData.endDate}</p>
+              <p><strong>Duration:</strong> {calculateDays(searchData.startDate, searchData.endDate)} days</p>
+              <p><strong>Total Price:</strong> ${selectedCar.totalPrice.toFixed(2)}</p>
             </div>
             
             {/* Show warning if user has existing bookings for these dates */}
             {myBookings.some(booking => 
-              booking.startDate === bookingForm.startDate && 
-              booking.endDate === bookingForm.endDate &&
+              booking.startDate === searchData.startDate && 
+              booking.endDate === searchData.endDate &&
               booking.status === 'confirmed'
             ) && (
               <div className="booking-warning">

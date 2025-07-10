@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { bookingConfirmationSchema } from '../utils/validations';
+import type { BookingConfirmationData } from '../utils/validations';
 import type { Booking, User, CarAvailability, CreateBookingRequest } from '../types';
 import { apiService } from '../services/api';
+import FormField from './common/FormField';
 import './BookingManagement.css';
 
 function BookingManagementComponent() {
@@ -11,13 +15,46 @@ function BookingManagementComponent() {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [formData, setFormData] = useState<CreateBookingRequest>({
-    carId: '',
-    startDate: '',
-    endDate: '',
-    licenseNumber: '',
-    licenseValidUntil: '',
-    totalPrice: 0
+  
+  // Form validation for booking creation
+  const {
+    formData: bookingData,
+    errors: bookingErrors,
+    loading: bookingLoading,
+    updateField: updateBookingField,
+    validateField: validateBookingField,
+    handleSubmit: handleBookingSubmit,
+    getFieldError: getBookingFieldError,
+    clearErrors: clearBookingErrors
+  } = useFormValidation<BookingConfirmationData>({
+    schema: bookingConfirmationSchema,
+    initialData: {
+      carId: '',
+      startDate: '',
+      endDate: '',
+      licenseNumber: '',
+      licenseValidUntil: '',
+      totalPrice: 0
+    },
+    onSubmit: async (data) => {
+      try {
+        await apiService.createBooking(data as CreateBookingRequest);
+        // Reset form
+        updateBookingField('carId', '');
+        updateBookingField('startDate', '');
+        updateBookingField('endDate', '');
+        updateBookingField('licenseNumber', '');
+        updateBookingField('licenseValidUntil', '');
+        updateBookingField('totalPrice', 0);
+        setShowForm(false);
+        setCars([]);
+        if (selectedUserId) {
+          loadUserBookings(selectedUserId);
+        }
+      } catch (err) {
+        throw err;
+      }
+    }
   });
 
   useEffect(() => {
@@ -52,53 +89,30 @@ function BookingManagementComponent() {
   };
 
   const loadCarAvailability = async () => {
-    if (!formData.startDate || !formData.endDate) return;
+    if (!bookingData.startDate || !bookingData.endDate) return;
     
     try {
-      const carData = await apiService.getCarAvailability(formData.startDate, formData.endDate);
+      const carData = await apiService.getCarAvailability(bookingData.startDate, bookingData.endDate);
       setCars(carData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load car availability');
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      await apiService.createBooking(formData);
-      setFormData({
-        carId: '',
-        startDate: '',
-        endDate: '',
-        licenseNumber: '',
-        licenseValidUntil: '',
-        totalPrice: 0
-      });
-      setShowForm(false);
-      setCars([]);
-      if (selectedUserId) {
-        loadUserBookings(selectedUserId);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create booking');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleBookingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    // Convert string to number for totalPrice field
+    const fieldValue = name === 'totalPrice' ? parseFloat(value) || 0 : value;
+    updateBookingField(name as keyof BookingConfirmationData, fieldValue);
+    clearBookingErrors();
 
     if (name === 'startDate' || name === 'endDate') {
       setTimeout(loadCarAvailability, 100);
     }
+  };
+
+  const handleBookingBlur = (fieldName: keyof BookingConfirmationData) => {
+    validateBookingField(fieldName);
   };
 
   const handleCancelBooking = async (bookingId: string) => {
@@ -145,35 +159,39 @@ function BookingManagementComponent() {
       </div>
 
       {showForm && (
-        <form className="booking-form" onSubmit={handleSubmit}>
+        <form className="booking-form" onSubmit={handleBookingSubmit}>
 
+
+          {getBookingFieldError('form') && (
+            <div className="error">⚠️ {getBookingFieldError('form')}</div>
+          )}
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="startDate">📅 Start Date:</label>
-              <input
-                type="date"
-                id="startDate"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleInputChange}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
+            <FormField
+              label="📅 Start Date"
+              id="startDate"
+              name="startDate"
+              type="date"
+              value={bookingData.startDate}
+              onChange={handleBookingChange}
+              onBlur={() => handleBookingBlur('startDate')}
+              required
+              min={new Date().toISOString().split('T')[0]}
+              error={getBookingFieldError('startDate')}
+            />
 
-            <div className="form-group">
-              <label htmlFor="endDate">📅 End Date:</label>
-              <input
-                type="date"
-                id="endDate"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleInputChange}
-                min={formData.startDate || new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
+            <FormField
+              label="📅 End Date"
+              id="endDate"
+              name="endDate"
+              type="date"
+              value={bookingData.endDate}
+              onChange={handleBookingChange}
+              onBlur={() => handleBookingBlur('endDate')}
+              required
+              min={bookingData.startDate || new Date().toISOString().split('T')[0]}
+              error={getBookingFieldError('endDate')}
+            />
           </div>
 
           {cars.length > 0 && (
@@ -183,8 +201,8 @@ function BookingManagementComponent() {
                 <select
                   id="carId"
                   name="carId"
-                  value={formData.carId}
-                  onChange={handleInputChange}
+                  value={bookingData.carId}
+                  onChange={handleBookingChange}
                   required
                 >
                   <option value="">Choose a car...</option>
@@ -199,56 +217,55 @@ function BookingManagementComponent() {
           )}
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="licenseNumber">🚗 License Number:</label>
-              <input
-                type="text"
-                id="licenseNumber"
-                name="licenseNumber"
-                value={formData.licenseNumber}
-                onChange={handleInputChange}
-                required
-                placeholder="Enter license number"
-              />
-            </div>
+            <FormField
+              label="🚗 License Number"
+              id="licenseNumber"
+              name="licenseNumber"
+              type="text"
+              value={bookingData.licenseNumber}
+              onChange={handleBookingChange}
+              onBlur={() => handleBookingBlur('licenseNumber')}
+              required
+              placeholder="Enter license number"
+              error={getBookingFieldError('licenseNumber')}
+            />
 
-            <div className="form-group">
-              <label htmlFor="licenseValidUntil">📅 License Valid Until:</label>
-              <input
-                type="date"
-                id="licenseValidUntil"
-                name="licenseValidUntil"
-                value={formData.licenseValidUntil}
-                onChange={handleInputChange}
-                required
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
+            <FormField
+              label="📅 License Valid Until"
+              id="licenseValidUntil"
+              name="licenseValidUntil"
+              type="date"
+              value={bookingData.licenseValidUntil}
+              onChange={handleBookingChange}
+              onBlur={() => handleBookingBlur('licenseValidUntil')}
+              required
+              min={new Date().toISOString().split('T')[0]}
+              error={getBookingFieldError('licenseValidUntil')}
+            />
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="totalPrice">💰 Total Price:</label>
-              <input
-                type="number"
-                id="totalPrice"
-                name="totalPrice"
-                value={formData.totalPrice}
-                onChange={handleInputChange}
-                step="0.01"
-                required
-                placeholder="Enter total price"
-              />
-            </div>
+            <FormField
+              label="💰 Total Price"
+              id="totalPrice"
+              name="totalPrice"
+              type="number"
+              value={bookingData.totalPrice.toString()}
+              onChange={handleBookingChange}
+              onBlur={() => handleBookingBlur('totalPrice')}
+              required
+              placeholder="Enter total price"
+              error={getBookingFieldError('totalPrice')}
+            />
           </div>
 
-          <button type="submit" className="submit-button" disabled={loading}>
-            {loading ? '⏳ Creating...' : '✅ Create Booking'}
+          <button type="submit" className="submit-button" disabled={bookingLoading}>
+            {bookingLoading ? '⏳ Creating...' : '✅ Create Booking'}
           </button>
         </form>
       )}
 
-      {error && <div className="error">⚠️ {error}</div>}
+      {error && <div className="error-message">⚠️ {error}</div>}
 
       {selectedUser && (
         <div className="bookings-list">

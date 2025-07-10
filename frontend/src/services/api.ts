@@ -65,7 +65,22 @@ class ApiService {
       headers: this.getHeaders(),
       body: JSON.stringify(userData),
     });
-    return this.parseResponse<AuthUser>(response, 'Registration failed');
+    
+    try {
+      return await this.parseResponse<AuthUser>(response, 'Registration failed');
+    } catch (error) {
+      // Provide more specific error messages for common registration issues
+      if (error instanceof Error) {
+        if (error.message.includes('email')) {
+          throw new Error('An account with this email already exists. Please use a different email or try logging in.');
+        } else if (error.message.includes('license')) {
+          throw new Error('Invalid license information. Please check your license number and expiry date.');
+        } else if (error.message.includes('password')) {
+          throw new Error('Password does not meet requirements. Please ensure it has at least 8 characters, one uppercase letter, one lowercase letter, and one number.');
+        }
+      }
+      throw error;
+    }
   }
 
   async login(loginData: LoginRequest): Promise<LoginResponse> {

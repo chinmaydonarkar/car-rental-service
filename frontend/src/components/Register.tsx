@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useFormValidation } from '../hooks/useFormValidation';
+import { registerSchema } from '../utils/validations';
+import type { RegisterFormData } from '../utils/validations';
 import { apiService } from '../services/api';
+import FormField from './common/FormField';
 import './Auth.css';
 
 interface RegisterProps {
@@ -8,40 +11,49 @@ interface RegisterProps {
 }
 
 export default function Register({ onRegister, onSwitchToLogin }: RegisterProps) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    licenseNumber: '',
-    licenseValidUntil: '',
-    phone: '',
-    address: ''
+  const {
+    formData,
+    errors,
+    loading,
+    updateField,
+    validateField,
+    handleSubmit,
+    getFieldError,
+    clearErrors
+  } = useFormValidation<RegisterFormData>({
+    schema: registerSchema,
+    initialData: {
+      name: '',
+      email: '',
+      password: '',
+      licenseNumber: '',
+      licenseValidUntil: '',
+      phone: '',
+      address: ''
+    },
+    onSubmit: async (data) => {
+      try {
+        await apiService.register(data);
+        alert('✅ Account created successfully! You can now sign in.');
+        onRegister();
+      } catch (error) {
+        // Error will be handled by the validation hook
+        throw error;
+      }
+    }
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    updateField(name as keyof RegisterFormData, value);
+    clearErrors();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      await apiService.register(formData);
-      alert('✅ Account created successfully! You can now sign in.');
-      onRegister();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
+  const handleBlur = (fieldName: keyof RegisterFormData) => {
+    validateField(fieldName);
   };
+
+  const formError = getFieldError('form');
 
   return (
     <div className="auth-container">
@@ -52,95 +64,96 @@ export default function Register({ onRegister, onSwitchToLogin }: RegisterProps)
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {error && <div className="error-message">{error}</div>}
+          {formError && <div className="error-message">{formError}</div>}
           
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              placeholder="Enter your full name"
-            />
-          </div>
+          <FormField
+            label="Full Name"
+            id="name"
+            name="name"
+            type="text"
+            value={formData.name}
+            onChange={handleChange}
+            onBlur={() => handleBlur('name')}
+            placeholder="Enter your full name"
+            required
+            error={getFieldError('name')}
+          />
 
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="Enter your email"
-            />
-          </div>
+          <FormField
+            label="Email Address"
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            onBlur={() => handleBlur('email')}
+            placeholder="Enter your email"
+            required
+            error={getFieldError('email')}
+          />
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Create a password"
-            />
-          </div>
+          <FormField
+            label="Password"
+            id="password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            onBlur={() => handleBlur('password')}
+            placeholder="Create a password (min 8 chars, 1 uppercase, 1 lowercase, 1 number)"
+            required
+            error={getFieldError('password')}
+          />
 
-          <div className="form-group">
-            <label htmlFor="licenseNumber">Driver's License Number</label>
-            <input
-              type="text"
-              id="licenseNumber"
-              name="licenseNumber"
-              value={formData.licenseNumber}
-              onChange={handleChange}
-              required
-              placeholder="Enter your license number"
-            />
-          </div>
+          <FormField
+            label="Driver's License Number"
+            id="licenseNumber"
+            name="licenseNumber"
+            type="text"
+            value={formData.licenseNumber}
+            onChange={handleChange}
+            onBlur={() => handleBlur('licenseNumber')}
+            placeholder="Enter your license number (uppercase letters and numbers only)"
+            required
+            error={getFieldError('licenseNumber')}
+          />
 
-          <div className="form-group">
-            <label htmlFor="licenseValidUntil">License Valid Until</label>
-            <input
-              type="date"
-              id="licenseValidUntil"
-              name="licenseValidUntil"
-              value={formData.licenseValidUntil}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <FormField
+            label="License Valid Until"
+            id="licenseValidUntil"
+            name="licenseValidUntil"
+            type="date"
+            value={formData.licenseValidUntil}
+            onChange={handleChange}
+            onBlur={() => handleBlur('licenseValidUntil')}
+            required
+            min={new Date().toISOString().split('T')[0]}
+            error={getFieldError('licenseValidUntil')}
+          />
 
-          <div className="form-group">
-            <label htmlFor="phone">Phone Number (Optional)</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter your phone number"
-            />
-          </div>
+          <FormField
+            label="Phone Number (Optional)"
+            id="phone"
+            name="phone"
+            type="tel"
+            value={formData.phone || ''}
+            onChange={handleChange}
+            onBlur={() => handleBlur('phone')}
+            placeholder="Enter your phone number"
+            error={getFieldError('phone')}
+          />
 
-          <div className="form-group">
-            <label htmlFor="address">Address (Optional)</label>
-            <input
-              type="text"
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Enter your address"
-            />
-          </div>
+          <FormField
+            label="Address (Optional)"
+            id="address"
+            name="address"
+            type="text"
+            value={formData.address || ''}
+            onChange={handleChange}
+            onBlur={() => handleBlur('address')}
+            placeholder="Enter your address"
+            error={getFieldError('address')}
+          />
 
           <button 
             type="submit" 

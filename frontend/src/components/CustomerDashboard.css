@@ -93,13 +93,16 @@
 }
 
 .error-message {
-  background: rgba(255, 107, 107, 0.2);
-  color: #ff6b6b;
-  padding: 15px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f8fafc;
+  padding: 12px 16px;
   border-radius: 10px;
-  margin-bottom: 20px;
-  border: 1px solid rgba(255, 107, 107, 0.3);
+  margin-bottom: 15px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
   backdrop-filter: blur(10px);
+  font-weight: 500;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 /* Browse Section */
@@ -120,7 +123,7 @@
 .form-row {
   display: flex;
   gap: 20px;
-  align-items: end;
+  align-items: flex-start; /* Align to top of form groups */
   margin-bottom: 30px;
   flex-wrap: wrap;
 }
@@ -128,6 +131,10 @@
 .form-group {
   flex: 1;
   min-width: 200px;
+  min-height: 90px; /* Ensure consistent height */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 .form-group label {
@@ -139,6 +146,7 @@
 
 .form-group input {
   width: 100%;
+  height: 100%;
   padding: 12px 16px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
@@ -146,6 +154,7 @@
   color: white;
   font-size: 1rem;
   backdrop-filter: blur(10px);
+  box-sizing: border-box;
 }
 
 .form-group input::placeholder {
@@ -156,6 +165,38 @@
   outline: none;
   border-color: rgba(255, 255, 255, 0.5);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure consistent input field heights */
+.form-group .input-container {
+  flex-shrink: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.form-group .field-error-container {
+  min-height: 30px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.form-group .field-error {
+  margin-top: 8px;
+  flex-shrink: 0;
+  color: #f8fafc;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  backdrop-filter: blur(10px);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
 }
 
 .search-button {
@@ -169,6 +210,12 @@
   font-weight: 600;
   transition: all 0.3s ease;
   min-width: 150px;
+  align-self: flex-start;
+  margin-top: 32px; /* Align with input fields */
+  height: 48px; /* Match input field height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-button:hover:not(:disabled) {
