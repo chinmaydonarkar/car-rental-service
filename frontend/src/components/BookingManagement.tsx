@@ -265,7 +265,13 @@ function BookingManagementComponent() {
         </form>
       )}
 
-      {error && <div className="error-message">⚠️ {error}</div>}
+      {error && (
+        <div className="error-message">
+          {error.includes('Driving license must be valid through all booking period')
+            ? 'Driving license must be valid through all booking period'
+            : error}
+        </div>
+      )}
 
       {selectedUser && (
         <div className="bookings-list">

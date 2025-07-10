@@ -58,7 +58,13 @@ export default function Login({ onLogin, onSwitchToRegister }: LoginProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {formError && <div className="error-message">{formError}</div>}
+          {formError && (
+            <div className="error-message">
+              {formError.includes('Invalid email or password')
+                ? 'Invalid email or password'
+                : formError}
+            </div>
+          )}
           
           <FormField
             label="Email Address"

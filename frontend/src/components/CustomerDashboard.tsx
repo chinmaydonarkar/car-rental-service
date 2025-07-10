@@ -179,7 +179,13 @@ export default function CustomerDashboard({ user, onLogout }: CustomerDashboardP
       </nav>
 
       <main className="dashboard-main">
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message">
+            {error.includes('Driving license must be valid through all booking period')
+              ? 'Driving license must be valid through all booking period'
+              : error}
+          </div>
+        )}
 
         {activeTab === 'browse' && (
           <div className="browse-section">
