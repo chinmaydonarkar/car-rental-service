@@ -1,11 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { BookingServiceClient } from '../services/bookingService';
+import { validateBody } from '../middleware/validation';
+import { registerSchema, loginSchema } from '../validation/userSchemas';
 
 const router = Router();
 const bookingService = new BookingServiceClient();
 
 // Register new user
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', validateBody(registerSchema), async (req: Request, res: Response) => {
   try {
     const user = await bookingService.register(req.body);
     res.status(201).json(user);
@@ -16,7 +18,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // Login user
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', validateBody(loginSchema), async (req: Request, res: Response) => {
   try {
     const result = await bookingService.login(req.body);
     res.json(result);

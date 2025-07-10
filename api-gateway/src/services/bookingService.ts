@@ -85,7 +85,10 @@ export interface User {
 
 function handleAxiosError(error: unknown, defaultMsg: string): never {
   if (axios.isAxiosError(error) && error.response) {
-    throw new Error(`${defaultMsg}: ${error.response.data.error || error.message}`);
+    const fullMsg = `${defaultMsg}: ${error.response.data.error || error.message}`;
+    // Only return the part after the colon if present
+    const userMsg = fullMsg.includes(':') ? fullMsg.split(':').slice(1).join(':').trim() : fullMsg;
+    throw new Error(userMsg);
   }
   throw new Error(defaultMsg);
 }

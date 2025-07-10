@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { BookingServiceClient } from '../services/bookingService';
 import { extractToken } from '../middleware/auth';
+import { z } from 'zod';
+import { validateBody } from '../middleware/validation';
 
 const router = Router();
 const bookingService = new BookingServiceClient();
@@ -27,13 +29,28 @@ function requireToken(req: AuthRequest, res: Response): string | undefined {
   return token;
 }
 
+const createBookingSchema = z.object({
+  userId: z.string().optional(),
+  carId: z.string().min(1, { message: 'Car ID is required' }),
+  startDate: z.string().min(1, { message: 'Start date is required' }),
+  endDate: z.string().min(1, { message: 'End date is required' }),
+  licenseNumber: z.string().min(5, { message: 'License number is required' }),
+  licenseValidUntil: z.string().min(1, { message: 'License valid until is required' }),
+  totalPrice: z.number().nonnegative({ message: 'Total price must be non-negative' }),
+});
+
 // Create a booking
-router.post('/', extractToken, asyncHandler(async (req: AuthRequest, res: Response) => {
-  const token = requireToken(req, res);
-  if (!token) return;
-  const booking = await bookingService.createBooking(req.body, token);
-  res.status(201).json(booking);
-}));
+router.post(
+  '/',
+  extractToken,
+  validateBody(createBookingSchema),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const token = requireToken(req, res);
+    if (!token) return;
+    const booking = await bookingService.createBooking(req.body, token);
+    res.status(201).json(booking);
+  })
+);
 
 // Get current user's bookings (protected)
 router.get('/my-bookings', extractToken, asyncHandler(async (req: AuthRequest, res: Response) => {
